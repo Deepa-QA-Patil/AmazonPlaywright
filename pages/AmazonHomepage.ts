@@ -18,20 +18,12 @@ export class AmazonHomepage {
       console.log('PAGE ERROR:', error.message);
     });
 
-    // Capture failed network requests
     this.page.on('requestfailed', request => {
       console.log(
         'REQUEST FAILED:',
         request.url(),
         request.failure()?.errorText
       );
-    });
-
-    // Capture console errors
-    this.page.on('console', message => {
-      if (message.type() === 'error') {
-        console.log('CONSOLE ERROR:', message.text());
-      }
     });
 
     // Navigate to Amazon
@@ -44,74 +36,44 @@ export class AmazonHomepage {
     );
 
     console.log('RESPONSE STATUS:', response?.status());
-    console.log('RESPONSE URL:', response?.url());
     console.log('CURRENT URL:', this.page.url());
     console.log('PAGE TITLE:', await this.page.title());
 
     await this.page.waitForTimeout(5000);
 
-    // Check Continue shopping page
+    // Detect intermediate page
     const continueButton = this.page.getByText(
       'Continue shopping',
       { exact: true }
     );
 
-    const continueCount = await continueButton.count();
-
-    console.log('CONTINUE BUTTON COUNT:', continueCount);
-
-    // Save initial screenshot
-    await this.page.screenshot({
-      path: 'amazon-verification.png',
-      fullPage: true
-    });
-
-    // Check whether Amazon displays an intermediate page
-    if (continueCount > 0) {
-      console.log('INTERMEDIATE PAGE DETECTED');
-
-      // Diagnostic experiment: click the button once
-      await continueButton.first().click();
-
-      await this.page.waitForLoadState('domcontentloaded');
-      await this.page.waitForTimeout(5000);
-
-      console.log('URL AFTER CLICK:', this.page.url());
-      console.log('TITLE AFTER CLICK:', await this.page.title());
-
-      console.log(
-        'SEARCH BOX AFTER CLICK:',
-        await this.searchBox.count()
-      );
-
+    if (await continueButton.count() > 0) {
       await this.page.screenshot({
-        path: 'after-continue-shopping.png',
+        path: 'amazon-verification.png',
         fullPage: true
       });
+
+      throw new Error(
+        'Amazon displayed the Continue shopping page instead of the homepage.'
+      );
     }
 
-    // Print page information
-    console.log(
-      'BODY TEXT:',
-      (
-        await this.page.locator('body')
-          .innerText()
-          .catch(() => 'No body text')
-      ).slice(0, 500)
-    );
+    // Validate search box
+    const searchBoxCount = await this.searchBox.count();
 
-    console.log(
-      'FINAL SEARCH BOX COUNT:',
-      await this.searchBox.count()
-    );
+    console.log('SEARCH BOX COUNT:', searchBoxCount);
 
-    // Save final screenshot
-    await this.page.screenshot({
-      path: 'debug.png',
-      fullPage: true
-    });
+    if (searchBoxCount === 0) {
+      await this.page.screenshot({
+        path: 'amazon-debug.png',
+        fullPage: true
+      });
 
-    // Validate homepage
+      throw new Error(
+        'Amazon homepage search box was not found. Check amazon-debug.png.'
+      );
+    }
+
     await expect(this.searchBox).toBeVisible({
       timeout: 20000
     });
