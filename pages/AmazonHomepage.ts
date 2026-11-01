@@ -38,6 +38,16 @@ export class AmazonHomepage {
       waitUntil: 'domcontentloaded',
       timeout: 60000
     });
+    console.log(
+  'Continue button count:',
+  await this.page.getByText('Continue shopping', {
+    exact: true
+  }).count()
+);
+    await this.page.screenshot({
+  path: 'amazon-verification.png',
+  fullPage: true
+});
 
     console.log('RESPONSE STATUS:', response?.status());
     console.log('RESPONSE URL:', response?.url());
