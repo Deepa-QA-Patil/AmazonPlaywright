@@ -1,6 +1,5 @@
 
 import { Page, Locator, expect } from '@playwright/test';
-import { TIMEOUT } from 'node:dns';
 
 export class AmazonHomepage {
   readonly page: Page;
@@ -13,83 +12,68 @@ export class AmazonHomepage {
     this.suggestions = page.locator('.s-suggestion-container');
   }
 
-  
-async open() {
+  async open() {
 
-  // Capture browser errors
-  this.page.on('pageerror', error => {
-    console.log('PAGE ERROR:', error.message);
-  });
+    // Capture browser errors
+    this.page.on('pageerror', error => {
+      console.log('PAGE ERROR:', error.message);
+    });
 
-  this.page.on('requestfailed', request => {
+    this.page.on('requestfailed', request => {
+      console.log(
+        'REQUEST FAILED:',
+        request.url(),
+        request.failure()?.errorText
+      );
+    });
+
+    this.page.on('console', message => {
+      if (message.type() === 'error') {
+        console.log('CONSOLE ERROR:', message.text());
+      }
+    });
+
+    // Navigate to Amazon
+    const response = await this.page.goto('https://www.amazon.in/', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000
+    });
+
+    console.log('RESPONSE STATUS:', response?.status());
+    console.log('RESPONSE URL:', response?.url());
+    console.log('CURRENT URL:', this.page.url());
+    console.log('PAGE TITLE:', await this.page.title());
+
+    await this.page.waitForTimeout(5000);
+
     console.log(
-      'REQUEST FAILED:',
-      request.url(),
-      request.failure()?.errorText
+      'BODY TEXT:',
+      (await this.page.locator('body').innerText().catch(() => 'No body text')).slice(0, 500)
     );
-  });
 
-  this.page.on('console', message => {
-    if (message.type() === 'error') {
-      console.log('CONSOLE ERROR:', message.text());
-    }
-  });
+    console.log(
+      'SEARCH BOX COUNT:',
+      await this.searchBox.count()
+    );
 
-  // Navigate to Amazon
-  const response = await this.page.goto('https://www.amazon.in/', {
-    waitUntil: 'domcontentloaded',
-    timeout: 60000
-  });
+    await this.page.screenshot({
+      path: 'debug.png',
+      fullPage: true
+    });
 
-  console.log('RESPONSE STATUS:', response?.status());
-  console.log('RESPONSE URL:', response?.url());
-  console.log('CURRENT URL:', this.page.url());
-  console.log('PAGE TITLE:', await this.page.title());
-
-  // Temporary wait for diagnostic purposes
-  await this.page.waitForTimeout(5000);
-
-  console.log(
-    'BODY TEXT:',
-    (await this.page.locator('body').innerText().catch(() => 'No body text')).slice(0, 500)
-  );
-
-  console.log(
-    'SEARCH BOX COUNT:',
-    await this.page.locator('#twotabsearchtextbox').count()
-  );
-
-  await this.page.screenshot({
-    path: 'debug.png',
-    fullPage: true
-  });
-
-  await expect(this.searchBox).toBeVisible({
-    timeout: 20000
-  });
-}
-
-  console.log('URL:', this.page.url());
-  console.log('Title:', await this.page.title());
-
-  await this.page.screenshot({
-    path: 'amazon-homepage-debug.png',
-    fullPage: true,
-  });
-
-  await expect(this.searchBox).toBeVisible({
-    timeout: 20000,
-  });
-}
-
+    await expect(this.searchBox).toBeVisible({
+      timeout: 20000
+    });
+  }
 
   async searchForProduct(productName: string) {
     await this.searchBox.fill(productName);
   }
+
   async submitSearch(productName: string) {
-  await this.searchBox.fill(productName);
-  await this.searchBox.press('Enter');
-}
+    await this.searchBox.fill(productName);
+    await this.searchBox.press('Enter');
+  }
 
   async selectSuggestion(index: number) {
     await expect(this.suggestions.nth(index)).toBeVisible();
