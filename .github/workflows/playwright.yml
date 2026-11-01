@@ -26,12 +26,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Firefox
+        run: npx playwright install --with-deps firefox
 
       - name: Run Playwright tests
-        run: npx playwright test --project=chromium
+        run: npx playwright test --project=firefox
         continue-on-error: true
+       
 
       - name: Upload HTML report and test evidence
         if: always()
