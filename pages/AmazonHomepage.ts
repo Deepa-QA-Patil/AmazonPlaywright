@@ -9,7 +9,7 @@ export class AmazonHomepage {
 
   constructor(page: Page) {
     this.page = page;
-    this.searchBox = page.getByPlaceholder('Search Amazon.in');
+    this.searchBox = page.locator('#twotabsearchtextbox');
     this.suggestions = page.locator('.s-suggestion-container');
   }
 
