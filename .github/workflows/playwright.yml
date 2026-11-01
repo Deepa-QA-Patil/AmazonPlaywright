@@ -32,6 +32,17 @@ jobs:
       - name: Run Playwright tests
         run: npx playwright test --project=firefox
         continue-on-error: true
+
+      - name: Upload Debug Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: amazon-debug-screenshots
+          path: |
+            debug.png
+            amazon-verification.png
+            after-continue-shopping.png
+          if-no-files-found: ignore
        
 
       - name: Upload HTML report and test evidence
